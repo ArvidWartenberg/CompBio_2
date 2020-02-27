@@ -2,6 +2,7 @@ import numpy as np
 import math
 from sympy import solve, Symbol, latex, simplify, symbols, Matrix
 import matplotlib.pyplot as plt
+from scipy.stats import norm
 import seaborn as sns
 from scipy.signal import savgol_filter
 
@@ -13,99 +14,126 @@ def find_next_event(alpha, beta, N, n):
         p_b = alpha * n * (1 - n / N)
         t_b = np.random.exponential(scale = 1/p_b)
         if t_b > t_d:
-            return t_d, -1
-        return t_b, 1
-    return t_d, -1
+            return t_d, n-1
+        return t_b, n+1
+    return t_d, n-1
 
 # Produce realizations using Gillepsi's algorithm
 def produce_realizations(n_realizations, max_samples, alpha, beta, N):
     realizations = np.zeros((max_samples, n_realizations))
-    extinction_times = np.zeros(n_realizations)
+    extinction_ixs = np.zeros(n_realizations)
     expected_delta_t = 0
+
     n_times = 0
     r = 0
     while r < n_realizations:
         print(r)
-        n_0 = N * (1 - beta / alpha)
-        n_t = [n_0]
-        t_r = [0]
+        n = N * (1 - beta / alpha)
         sample = 0
-        while sample < max_samples-1 and n_t[-1] >= 1:
-            if n_t[-1] == 0:
+        while sample < max_samples-1 and n>0:
+            delta_t, n = find_next_event(alpha=alpha, beta=beta, N=N, n=n)
+            if n<0:
                 break
-            delta_t, event = find_next_event(alpha=alpha, beta=beta, N=N, n=n_t[-1])
-            n_t.append(n_t[-1] + event)
-            t_r.append(t_r[-1] + delta_t)
+            realizations[sample, r] = n
             sample += 1
             n_times += 1
             expected_delta_t += delta_t
-        n_t = np.array(n_t)
-        t_r = np.array(t_r)
-        realizations[0:len(n_t),r] = n_t
-        extinction_times[r] = t_r[-1]*int(len(t_r)<max_samples-1)
+
+
+        extinction_ixs[r] = sample*int(sample < max_samples-2)
         r += 1
+
     expected_delta_t = expected_delta_t/n_times
-    extinction_times = extinction_times[np.where(extinction_times != 0)]
-    return realizations, extinction_times, expected_delta_t
-
-def get_rho_n_t(realizations, t_ix, delta_ix, bins = np.arange(0,50,1)):
-    data = realizations[t_ix-delta_ix:t_ix+delta_ix, :]
-    #data[np.where(data==0)] = np.nan
-    rho_n_t = np.histogram(realizations[t_ix-delta_ix:t_ix+delta_ix, :], bins=bins, density=True)[0]
-    rho_n_t_smooth = savgol_filter(rho_n_t, 11, 3)
-    return rho_n_t_smooth #rho_n_t_smooth
+    expected_t_ix = int(n_times/r)
+    extinction_ixs = extinction_ixs[np.where(extinction_ixs != 0)]
+    return realizations, extinction_ixs, expected_delta_t, expected_t_ix
 
 
-alpha, beta = .012, .01
+
+
+alpha, beta = 1, .8
 N = 100
-dt = 0.001
-max_samples = 3000
-n_realizations = 10000
+max_samples = 30000
+n_realizations = 1000
 
-realizations, extinction_times, expected_delta_t = produce_realizations(n_realizations=n_realizations,
+realizations, extinction_times, expected_delta_t, expected_t_ix = produce_realizations(n_realizations=n_realizations,
                                                                         max_samples=max_samples,
                                                                         alpha=alpha, beta=beta, N=N)
+
+np.save('R', realizations)
+np.save('E_ts', extinction_times)
+np.save('dt', expected_delta_t)
+np.save('E_ix', expected_t_ix)
+
+'''
 T_ext = np.average(extinction_times)
-n_bins=50
+n_bins=10
 t_bins = (np.linspace(0,max(extinction_times), n_bins)).astype('int')
 ext_bins = np.histogram(extinction_times, bins=t_bins, normed=True)[0]
 ext_bins = savgol_filter(ext_bins, 11, 3)
+
 plt.plot(t_bins[0:n_bins-1], ext_bins, linewidth=3, color='b', label='Extinction density')
 plt.axvline(T_ext, linewidth=3, c='r', linestyle='--', label='T_ext')
-plt.xlabel('Time', fontsize=15)
+plt.xlabel('Time [unit time]', fontsize=15)
 plt.ylabel('Extinction density', fontsize=15)
 plt.title('Extinction probability vs. time', fontsize=17)
+plt.tight_layout(True)
+'''
 
-t_0 = 20
-t_1 = int(T_ext/6/expected_delta_t)
-t_2 = int(T_ext/expected_delta_t)
-t_3 = int(T_ext*(1+5/6)/expected_delta_t)
-delta_ix = 10
-bins_n = np.arange(0,50,1)
-rho_t0 = get_rho_n_t(realizations=realizations, t_ix=t_0, delta_ix=delta_ix, bins=bins_n)
-rho_t1 = get_rho_n_t(realizations=realizations, t_ix=t_1, delta_ix=delta_ix, bins=bins_n)
-rho_t2 = get_rho_n_t(realizations=realizations, t_ix=t_2, delta_ix=delta_ix, bins=bins_n)
-rho_t3 = get_rho_n_t(realizations=realizations, t_ix=t_3, delta_ix=delta_ix, bins=bins_n)
+'''
+rho_t0, p_0, bins_0 = get_rho_n_t(realizations=realizations, t_ix=t_0, delta_ix=delta_ix, bins=bins_n)
+rho_t1, p_1, bins_1 = get_rho_n_t(realizations=realizations, t_ix=t_1, delta_ix=delta_ix, bins=bins_n)
+rho_t2, p_2, bins_2 = get_rho_n_t(realizations=realizations, t_ix=t_2, delta_ix=delta_ix, bins=bins_n)
+rho_t3, p_3, bins_3 = get_rho_n_t(realizations=realizations, t_ix=t_3, delta_ix=delta_ix, bins=bins_n)
+
+bins = bins_1
 
 plt.figure()
-plt.plot(-np.log(rho_t0), c='m', label='$t_1$', linewidth=3)
-plt.plot(-np.log(rho_t1), c='r', label='$t_1$', linewidth=3)
-plt.plot(-np.log(rho_t2), c='g', label='$t_2$', linewidth=3)
-plt.plot(-np.log(rho_t3), c='b', label='$t_3$', linewidth=3)
+plt.plot(bins,-np.log(rho_t0), c='m', label='$t_0$', linewidth=3)
+plt.plot(bins,-np.log(rho_t1), c='r', label='$t_1$', linewidth=3)
+plt.plot(bins,-np.log(rho_t2), c='g', label='$t_2$', linewidth=3)
+plt.plot(bins,-np.log(rho_t3), c='b', label='$t_3$', linewidth=3)
+plt.plot(bins,-np.log(p_0), c='m', label='$t_0$', linewidth=2, linestyle=':')
+plt.plot(bins,-np.log(p_1), c='r', label='$t_1$', linewidth=2, linestyle=':')
+plt.plot(bins,-np.log(p_2), c='g', label='$t_2$', linewidth=2, linestyle=':')
+plt.plot(bins,-np.log(p_3), c='b', label='$t_3$', linewidth=2, linestyle=':')
+plt.xlabel('n infected', fontsize=15)
+plt.ylabel('$-log(\\rho_n(t))$', fontsize=15)
+plt.title('Logarithmic density for different t', fontsize=17)
 plt.legend()
+plt.tight_layout(True)
 
 plt.figure()
-plt.plot(rho_t0, c='m', label='$t_0$', linewidth=2)
-plt.plot(rho_t1, c='r', label='$t_1$', linewidth=2)
-plt.plot(rho_t2, c='g', label='$t_2$', linewidth=2)
-plt.plot(rho_t3, c='b', label='$t_3$', linewidth=2)
+plt.plot(bins,rho_t0, c='m', label='$t_0$', linewidth=2)
+plt.plot(bins,rho_t1, c='r', label='$t_1$', linewidth=2)
+plt.plot(bins,rho_t2, c='g', label='$t_2$', linewidth=2)
+plt.plot(bins,rho_t3, c='b', label='$t_3$', linewidth=2)
+plt.plot(bins,p_0, c='m', label='$t_0$', linewidth=2, linestyle=':')
+plt.plot(bins,p_1, c='r', label='$t_1$', linewidth=2, linestyle=':')
+plt.plot(bins,p_2, c='g', label='$t_2$', linewidth=2, linestyle=':')
+plt.plot(bins,p_3, c='b', label='$t_3$', linewidth=2, linestyle=':')
+plt.xlabel('n infected', fontsize=15)
+plt.ylabel('$\\rho_n(t)$', fontsize=15)
+plt.title('Density for different t', fontsize=17)
+plt.tight_layout(True)
 
-plt.title('blabla')
+plt.figure()
+plt.plot(bins,np.cumsum(rho_t0), c='m', label='$t_0$', linewidth=2)
+plt.plot(bins,np.cumsum(rho_t1), c='r', label='$t_1$', linewidth=2)
+plt.plot(bins,np.cumsum(rho_t2), c='g', label='$t_2$', linewidth=2)
+plt.plot(bins,np.cumsum(rho_t3), c='b', label='$t_3$', linewidth=2)
+plt.plot(bins,np.cumsum(p_0), c='m', label='$t_0$', linewidth=2, linestyle=':')
+plt.plot(bins,np.cumsum(p_1), c='r', label='$t_1$', linewidth=2, linestyle=':')
+plt.plot(bins,np.cumsum(p_2), c='g', label='$t_2$', linewidth=2, linestyle=':')
+plt.plot(bins,np.cumsum(p_3), c='b', label='$t_3$', linewidth=2, linestyle=':')
 plt.xlabel('n infected', fontsize=15)
-plt.xlabel('n infected', fontsize=15)
+plt.ylabel('$Cumulative density$', fontsize=15)
+plt.title('Cumulative density for different t', fontsize=17)
+plt.tight_layout(True)
+
 plt.legend()
 plt.show()
 print()
-
+'''
 
 
