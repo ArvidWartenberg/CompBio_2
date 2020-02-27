@@ -3,18 +3,6 @@ from sympy import solve, Symbol, latex, simplify, symbols
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Symbolically find fixpts
-'''
-a,b,d,K,S,I,D = symbols('a b d K S I D')
-dSdt = b*(I+S)-d*S-S*(I+S)/K-a*S*I
-dIdt = -d*I-I*(S+I)/K+a*S*I
-sol = solve([dSdt,dIdt],[S,I])
-
-# Print for latex
-for j in range(len(sol)):
-    print('(S^*_%i,I^*_%i)&='%(j+1,j+1) + str(latex(sol[j])) + '\\\\')
-    #print(sol[j])
-'''
 
 # Define Habitat class
 class Habitat:

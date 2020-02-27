@@ -6,39 +6,6 @@ import seaborn as sns
 
 
 
-'''
-# Symbolically find fixpts
-alpha, beta, S, I, N = symbols('alpha beta S I N')
-dSdt = -alpha*S*I/(I+S) + beta*I
-dIdt = alpha*S*I/(I+S) - beta*I
-dIdt_simple = alpha*(N-I)*I/N - beta*I
-sol = solve([dSdt,dIdt],[S,I])
-sol_2 = solve(dIdt_simple, I)
-print(sol)
-print(sol_2)
-
-# Bio relevant fp
-sol_bio = sol[1]
-print(sol_bio)
-
-# Get Jacobian
-X = Matrix([S, I])
-Y = Matrix([dSdt, dIdt])
-J = Y.jacobian(X)
-
-# Get eigs
-eigs = list(J.eigenvals().keys())
-print('eigs' + str(eigs))
-
-# Linear dependence in eqts, use relevant eig..
-print('eigs2' + str(simplify(eigs[0].subs([(S,sol_bio[0]),(I,sol_bio[1])]))))
-
-# Print for latex
-#for j in range(len(sol)):
-    #print('(S^*_%i,I^*_%i)&='%(j+1,j+1) + str(latex(sol[j])) + '\\\\')
-#    print(sol[j])
-'''
-
 def find_next_event(b_n, d_n, dt):
     t = 0
     win = -1
@@ -60,13 +27,14 @@ def find_next_event(b_n, d_n, dt):
 
 b_n, d_n =  [0.1, 1, 10], [0.2, 2, 5] # b_n: new infection, d_n: recovery
 dt = 0.001 # big time steps cause problems in iterate method for last case as both should pass often but only first does
-n_events = 10000
+n_events = 1000
 
 events = np.zeros(shape=[n_events, 6])
 for i in range(n_events):
     events[i,0:2] = find_next_event(b_n=b_n[0], d_n=d_n[0], dt=dt)
     events[i,2:4] = find_next_event(b_n=b_n[1], d_n=d_n[1], dt=dt)
     events[i,4::] = find_next_event(b_n=b_n[2], d_n=d_n[2], dt=dt)
+    print(str(i+1) + ' events found')
 
 # Only one set of events for b_n,d_n here!
 def find_event_distance_time(events):
@@ -99,29 +67,29 @@ plt.subplot(3,1,1)
 plt.title('Norm. log. Hist for time between inf/rec', fontsize=17)
 plt.hist(rec_times_1, bins=bins_1, color='r', alpha=.5, label='$t_{rec}$, $b_n=.1, d_n=.2$', density=True)#, log=True)
 plt.hist(inf_times_1, bins=bins_1, color='b', alpha=.5, label='$t_{inf}$, $b_n=.1, d_n=.2$', density=True)#, log=True)
-plt.plot(bins_1, line_1_b, color='b', linewidth=3)
-plt.plot(bins_1, line_1_d, color='r', linewidth=3)
+plt.plot(bins_1, line_1_b, color='r', linewidth=3)
+plt.plot(bins_1, line_1_d, color='b', linewidth=3)
 plt.semilogy()
-plt.ylabel('log(density)')
+plt.ylabel('log(density)', fontsize=15)
 plt.legend(fontsize=10)
 
 plt.subplot(3,1,2)
 plt.hist(rec_times_2, bins=bins_2, color='r', alpha=.5, label='$t_{rec}$, $b_n=1, d_n=2$', density=True)#, log=True)
 plt.hist(inf_times_2, bins=bins_2, color='b', alpha=.5, label='$t_{inf}$, $b_n=1, d_n=2$', density=True)#, log=True)
-plt.plot(bins_2, line_2_b, color='b', linewidth=3)
-plt.plot(bins_2, line_2_d, color='r', linewidth=3)
+plt.plot(bins_2, line_2_b, color='r', linewidth=3)
+plt.plot(bins_2, line_2_d, color='b', linewidth=3)
 plt.semilogy()
-plt.ylabel('log(density)')
+plt.ylabel('log(density)', fontsize=15)
 plt.legend(fontsize=10)
 
 plt.subplot(3,1,3)
 plt.hist(rec_times_3, bins=bins_3, color='r', alpha=.5, label='$t_{rec}$, $b_n=10, d_n=5$', density=True)#, log=True)
 plt.hist(inf_times_3, bins=bins_3, color='b', alpha=.5, label='$t_{inf}$, $b_n=10, d_n=5$', density=True)#, log=True)
-plt.plot(bins_3, line_3_b, color='b', linewidth=3)
-plt.plot(bins_3, line_3_d, color='r', linewidth=3)
+plt.plot(bins_3, line_3_b, color='r', linewidth=3)
+plt.plot(bins_3, line_3_d, color='b', linewidth=3)
 plt.semilogy()
-plt.xlabel('Time')
-plt.ylabel('log(density)')
+plt.xlabel('Time', fontsize=15)
+plt.ylabel('log(density)', fontsize=15)
 plt.legend(fontsize=10)
 plt.show()
 
