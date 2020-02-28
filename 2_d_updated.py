@@ -51,19 +51,19 @@ def produce_realizations(n_realizations, max_samples, alpha, beta, N):
 
 
 
-alpha, beta = 1, .8
+alpha, beta = 1, .9
 N = 100
 max_samples = 30000
-n_realizations = 1000
+n_realizations = 30000
 
 realizations, extinction_times, expected_delta_t, expected_t_ix = produce_realizations(n_realizations=n_realizations,
                                                                         max_samples=max_samples,
                                                                         alpha=alpha, beta=beta, N=N)
 
-np.save('R', realizations)
-np.save('E_ts', extinction_times)
-np.save('dt', expected_delta_t)
-np.save('E_ix', expected_t_ix)
+np.save('R_2', realizations)
+np.save('E_ts_2', extinction_times)
+np.save('dt_2', expected_delta_t)
+np.save('E_ix_2', expected_t_ix)
 
 '''
 T_ext = np.average(extinction_times)
