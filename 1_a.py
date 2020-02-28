@@ -16,7 +16,9 @@ for j in range(len(sol)):
     print('(S^*_%i,I^*_%i)&='%(j+1,j+1) + str(latex(sol[j])) + '\\\\')
 
 # Biologically relevant soln.
-sol_bio = sol[2]
+sol_bio1 = sol[0]
+sol_bio2 = sol[1]
+sol_bio3 = sol[2]
 
 # Get Jacobian
 X = Matrix([S, I])
@@ -26,9 +28,23 @@ print(latex(simplify(J)))
 
 # Get eigs
 eigs = list(J.eigenvals().keys())
-eig_1 = simplify(eigs[0].subs([(S, sol_bio[0]), (I, sol_bio[1])]))
-eig_2 = simplify(eigs[1].subs([(S, sol_bio[0]), (I, sol_bio[1])]))
+eig_1 = simplify(eigs[0].subs([(S, sol_bio1[0]), (I, sol_bio1[1])]))
+eig_2 = simplify(eigs[1].subs([(S, sol_bio1[0]), (I, sol_bio1[1])]))
+
+eig_11 = simplify(eigs[0].subs([(S, sol_bio2[0]), (I, sol_bio2[1])]))
+eig_21 = simplify(eigs[1].subs([(S, sol_bio2[0]), (I, sol_bio2[1])]))
+
+eig_12 = simplify(eigs[0].subs([(S, sol_bio3[0]), (I, sol_bio3[1])]))
+eig_22 = simplify(eigs[1].subs([(S, sol_bio3[0]), (I, sol_bio3[1])]))
 
 #print eigs
 print(latex(eig_1))
 print(latex(eig_2))
+
+
+print(latex(eig_11))
+print(latex(eig_21))
+
+
+print(latex(eig_12))
+print(latex(eig_22))
